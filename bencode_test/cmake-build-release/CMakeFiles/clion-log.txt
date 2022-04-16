@@ -1,0 +1,4 @@
+"D:\CLion 2021.3.3\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=D:/CLion 2021.3.3/bin/ninja/win/ninja.exe" -G Ninja "D:\CLion Project\bencode\bencode_test"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/CLion Project/bencode/bencode_test/cmake-build-release

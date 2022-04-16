@@ -1,0 +1,4 @@
+# ninja log v5
+3	1253	6718213879860223	CMakeFiles/test_bencode.dir/main.cpp.obj	681c644c83e2d5c1
+8	1810	6718213696437329	CMakeFiles/test_bencode.dir/D_/CLion_Project/bencode/bencode.cpp.obj	6eaa9a7a90e7d43c
+1253	1621	6718213883511650	test_bencode.exe	3a2e0a49fe133755
