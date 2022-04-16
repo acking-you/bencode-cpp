@@ -676,20 +676,50 @@ namespace bencode {
 
         template<class T>
         friend Bencode &operator>>(Bencode &bencode, std::vector<T> &dest) {
-            BObject &obj = *bencode.m_dict.object;
-            bencode.template getVector(dest, obj);
+            auto dict = bencode.m_dict.dict;
+            if(dict){
+                auto ret = dict->find("LIST");
+                if(ret!=dict->end()){
+                    BObject& p = *ret->second;
+                    bencode.template getVector(dest, p);
+                }else{
+                    perror(Error::ErrTyp,"not find List can convert!");
+                }
+            }else{
+                perror(Error::ErrIvd,"at convert to list ,dict is nullptr!");
+            }
             return bencode;
         }
 
         friend Bencode &operator>>(Bencode &bencode, std::string &dest) {
-            BObject &obj = *bencode.m_dict.object;
-            dest = std::move(std::string(obj));
+            auto dict = bencode.m_dict.dict;
+            if(dict){
+                auto ret = dict->find("STR");
+                if(ret!=dict->end()){
+                    BObject& p = *ret->second;
+                    dest = std::string(p);
+                }else{
+                    perror(Error::ErrTyp,"not find Str can convert!");
+                }
+            }else{
+                perror(Error::ErrIvd,"at convert to Str ,dict is nullptr!");
+            }
             return bencode;
         }
 
         friend Bencode &operator>>(Bencode &bencode, int &dest) {
-            BObject &obj = *bencode.m_dict.object;
-            dest = obj;
+            auto dict = bencode.m_dict.dict;
+            if(dict){
+                auto ret = dict->find("INT");
+                if(ret!=dict->end()){
+                    BObject& p = *ret->second;
+                    dest = int(p);
+                }else{
+                    perror(Error::ErrTyp,"not find Int can convert!");
+                }
+            }else{
+                perror(Error::ErrIvd,"at convert to Int ,dict is nullptr!");
+            }
             return bencode;
         }
 
