@@ -1,5 +1,15 @@
+# Bencode
+
 A modern-cpp  bencode serialization/deserialization library.
 
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Usage](#usage)
+    * [Data types](#data-types)
+    * [Serialization and Deserialization](#serialization-and-deserialization)
+        * [Base Type](#base-type)
+        * [Custom Type](#custom-type)
+* [License](#license)
 ## Requirements
 
 This library has no external dependencies and request cpp version higher than C++17.It's been tested on CLion with gcc10+.
