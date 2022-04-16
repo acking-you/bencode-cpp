@@ -233,6 +233,24 @@ namespace bencode {
             return os;
         }
 
+        friend BEntity& operator>>(BEntity& b,int& val){
+            if(b.val){
+                val = *b.val;
+            }else{
+                perror(Error::ErrIvd,"val nullptr!");
+            }
+            return b;
+        }
+
+        friend BEntity& operator<<(BEntity& b,int val){
+            if(b.val){
+               *b.val = val;
+            }else{
+                perror(Error::ErrIvd,"val nullptr!");
+            }
+            return b;
+        }
+
         friend std::istream &operator>>(std::istream &is, BEntity &entity) {
             Error error;
             entity.object = std::move(BObject::Parse(is, &error));
@@ -278,6 +296,15 @@ namespace bencode {
 
         friend BEntity &operator<<(BEntity &b, const char *str) {
             b << std::string(str);
+            return b;
+        }
+
+        friend BEntity &operator>>(BEntity &b, std::string& str) {
+            if (b.val) {
+                str = std::move(*b.val);
+            } else {
+                perror(Error::ErrIvd, "nullptr b.val");
+            }
             return b;
         }
 
