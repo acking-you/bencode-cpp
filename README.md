@@ -2,7 +2,7 @@ A modern-cpp  bencode serialization/deserialization library.
 
 ## Requirements
 
-This library has no external dependencies and only requires a C++17 compiler.It's been tested on CLion with gcc10+.
+This library has no external dependencies and request cpp version higher than C++17.It's been tested on CLion with gcc10+.
 
 **Note:** This library uses `std::variant` as the base type,so your cpp version needs to support it.
 
