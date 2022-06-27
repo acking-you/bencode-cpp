@@ -1,6 +1,13 @@
-cmake_minimum_required(VERSION 3.21)
-project(bencode)
+include_directories(../src)
+include_directories(../lib)
 
-set(CMAKE_CXX_STANDARD 20)
-include_directories("../")
-add_executable(test_bencode main.cpp "../bencode.cpp")
+set(SRC_CXX
+        main.cpp
+        )
+file(GLOB BSRC ${CMAKE_SOURCE_DIR}/src/*.cpp)
+
+add_definitions(-DU_DICT)
+
+include_directories(${CMAKE_SOURCE_DIR}/src)
+
+add_executable(test_bencode ${SRC_CXX} ${BSRC})

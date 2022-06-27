@@ -35,7 +35,7 @@ target_link_libraries({YOUR_Project_Name} bencode)
 
 ### Data types
 
-Bencode has four base data types: `integer`, `string`, `list`, and `dict`. These correspond to `int`, `std::string`, `std::vector<bencode::BObject>`, and `std::map<std::string, bencode::BObject>`, respectively. Since the data types are determined at runtime, these are all stored in a variant type called `BObject`.
+Bencode has four base data types: `integer`, `string`, `GetList`, and `GetDict`. These correspond to `int`, `std::string`, `std::vector<bencode::BObject>`, and `std::map<std::string, bencode::BObject>`, respectively. Since the data types are determined at runtime, these are all stored in a variant type called `BObject`.
 
 More implementation details can be found in the BObject section of [bencode.h](./bencode.h)
 
@@ -75,7 +75,7 @@ int main(){
 }
 ```
 
-I recommend using the second way for serialization, because `Bencode` only supports final serialization to a `dict`, so method one and method two are the same, except that method one hides the internal details.
+I recommend using the second way for serialization, because `Bencode` only supports final serialization to a `GetDict`, so method one and method two are the same, except that method one hides the internal details.
 
 If you want to get the bencode of basic types such as int directly, you can use `BEntity<int>` 。
 

@@ -1,41 +1,14 @@
-// Created by Alone on 2022-4-3.
+//
+// Created by Alone on 2022-5-7.
 //
 
-#include "bencode.h"
-
+#include "BObject.h"
+#include "BEntity.hpp"
+#include <sstream>
 #include <iostream>
 
-using std::cerr;
-using bencode::Error;
-using bencode::BType;
-using bencode::BObject;
 using std::string;
-
-void bencode::perror(bencode::Error error_code, const char *info) {
-    if (info)cerr << info << "  ";
-    switch (error_code) {
-        case Error::ErrNum:
-            cerr << "expect num\n";
-            break;
-        case Error::ErrCol:
-            cerr << "expect colon\n";
-            break;
-        case Error::ErrEpI:
-            cerr << "expect char i\n";
-            break;
-        case Error::ErrEpE:
-            cerr << "expect char e\n";
-            break;
-        case Error::ErrTyp:
-            cerr << "wrong type\n";
-            break;
-        case Error::ErrIvd:
-            cerr << "invalid bencode\n";
-            break;
-        default:
-            cerr << "no error\n";
-    }
-}
+using bencode::BObject;
 
 bencode::BObject::operator std::string() {
     Error error;
@@ -59,39 +32,39 @@ bencode::BObject::operator int() {
 
 
 std::string *bencode::BObject::Str(Error *error_code) {
-    if (this->type != BType::BSTR) {
+    if (this->type_ != BType::BSTR) {
         if (error_code)*error_code = Error::ErrTyp;
         return nullptr;
     }
     if (error_code)*error_code = Error::NoError;
-    return get_if<string>(&this->value);
+    return get_if<string>(&this->value_);
 }
 
 int *bencode::BObject::Int(Error *error_code) {
-    if (this->type != BType::BINT) {
+    if (this->type_ != BType::BINT) {
         if (error_code)*error_code = Error::ErrTyp;
         return nullptr;
     }
     if (error_code)*error_code = Error::NoError;
-    return get_if<int>(&this->value);
+    return get_if<int>(&this->value_);
 }
 
 BObject::LIST *bencode::BObject::List(Error *error_code) {
-    if (this->type != BType::BLIST) {
+    if (this->type_ != BType::BLIST) {
         if (error_code)*error_code = Error::ErrTyp;
         return nullptr;
     }
     if (error_code)*error_code = Error::NoError;
-    return get_if<LIST>(&this->value);
+    return get_if<LIST>(&this->value_);
 }
 
 BObject::DICT *bencode::BObject::Dict(Error *error_code) {
-    if (this->type != BType::BDICT) {
+    if (this->type_ != BType::BDICT) {
         if (error_code)*error_code = Error::ErrTyp;
         return nullptr;
     }
     if (error_code)*error_code = Error::NoError;
-    return get_if<DICT>(&this->value);
+    return get_if<DICT>(&this->value_);
 }
 
 //recursive descent bencode
@@ -101,7 +74,7 @@ int bencode::BObject::Bencode(std::ostream &os) {
         return wLen;
     }
     void *val;
-    switch (this->type) {
+    switch (this->type_) {
         case BType::BSTR:
             val = this->Str();
             if (val)
@@ -157,17 +130,17 @@ std::shared_ptr<BObject> bencode::BObject::Parse(std::istream &in, Error *error)
             return nullptr;
         }
         obj = new BObject();
-        obj->type = BType::BSTR;
-        obj->value = str;
+        obj->type_ = BType::BSTR;
+        obj->value_ = str;
     } else if (x == 'i') {//parse int
         auto val = DecodeInt(in, error);
         if (error && *error != Error::NoError) {
             return nullptr;
         }
         obj = new BObject();
-        obj->type = BType::BINT;
-        obj->value = val;
-    } else if (x == 'l') {//parse list
+        obj->type_ = BType::BINT;
+        obj->value_ = val;
+    } else if (x == 'l') {//parse GetList
         in.get();
         LIST list;
         do {
@@ -182,9 +155,9 @@ std::shared_ptr<BObject> bencode::BObject::Parse(std::istream &in, Error *error)
             list.emplace_back(std::move(ele));
         } while (true);
         obj = new BObject();
-        obj->type = BType::BLIST;
-        obj->value = std::move(list);
-    } else if (x == 'd') {//parse dict
+        obj->type_ = BType::BLIST;
+        obj->value_ = std::move(list);
+    } else if (x == 'd') {//parse GetDict
         in.get();
         DICT dict;
         do {
@@ -203,8 +176,8 @@ std::shared_ptr<BObject> bencode::BObject::Parse(std::istream &in, Error *error)
             dict.emplace(std::move(key), std::move(val));
         } while (true);
         obj = new BObject();
-        obj->type = BType::BDICT;
-        obj->value = std::move(dict);
+        obj->type_ = BType::BDICT;
+        obj->value_ = std::move(dict);
     } else {
         if (error)*error = Error::ErrIvd;
         return nullptr;
@@ -213,6 +186,18 @@ std::shared_ptr<BObject> bencode::BObject::Parse(std::istream &in, Error *error)
     return std::shared_ptr<BObject>(obj);
 }
 
+//converse string to stringstream and to Parse
+bencode::Bencode bencode::BObject::parse(std::string text) {
+    std::istringstream reader(std::move(text));
+    Error error;
+    auto ptr = Parse(reader,&error);
+    if(error!=Error::NoError){
+        throw std::runtime_error("parse error");
+    }
+    return bencode::Bencode(ptr);
+}
+
+
 
 int bencode::BObject::getIntLen(int val) {
     int ret = 0;
@@ -220,7 +205,6 @@ int bencode::BObject::getIntLen(int val) {
         ret = 1;
         val *= -1;
     }
-
     do {
         ret++;
         val /= 10;
@@ -308,41 +292,41 @@ int bencode::BObject::DecodeInt(std::istream &in, Error *error) {
 }
 
 BObject &bencode::BObject::operator=(int v) {
-    value = v;
-    type = BType::BINT;
+    value_ = v;
+    type_ = BType::BINT;
     return *this;
 }
 
 BObject &bencode::BObject::operator=(string str) {
-    value = std::move(str);
-    type = BType::BSTR;
+    value_ = std::move(str);
+    type_ = BType::BSTR;
     return *this;
 }
 
 BObject &bencode::BObject::operator=(BObject::LIST list) {
-    type = BType::BLIST;
-    value = std::move(list);
+    type_ = BType::BLIST;
+    value_ = std::move(list);
     return *this;
 }
 
 BObject &bencode::BObject::operator=(DICT dict) {
-    type = BType::BDICT;
-    value = std::move(dict);
+    type_ = BType::BDICT;
+    value_ = std::move(dict);
     return *this;
 }
 
-bencode::BObject::BObject(std::string v) : value(std::move(v)), type(BType::BSTR) {
+bencode::BObject::BObject(std::string v) : value_(std::move(v)), type_(BType::BSTR) {
 
 }
 
-bencode::BObject::BObject(int v) : value(v), type(BType::BINT) {
+bencode::BObject::BObject(int v) : value_(v), type_(BType::BINT) {
 }
 
-bencode::BObject::BObject(BObject::LIST list) : value(std::move(list)), type(BType::BLIST) {
+bencode::BObject::BObject(BObject::LIST list) : value_(std::move(list)), type_(BType::BLIST) {
 
 }
 
-bencode::BObject::BObject(BObject::DICT dict) : value(std::move(dict)), type(BType::BDICT) {
+bencode::BObject::BObject(BObject::DICT dict) : value_(std::move(dict)), type_(BType::BDICT) {
 
 }
 
@@ -350,10 +334,83 @@ bencode::BObject::BObject(const char *str) : BObject(string(str)) {
 
 }
 
+#define PRINT_NEXT_LINE(var)  obj.append(string(var,' '));
 
+void bencode::BObject::get_json(int curRowLen, std::string &obj) {
+    switch (type_) {
+        case BType::BSTR:{
+            auto str = Str();
+            if(!str){
+                NULL_ERROR(to_string,STR)
+            }
+            auto src_str = R"(")"+*str+R"(")";
+            obj.append(src_str);
+            break;
+        }
+        case BType::BINT:{
+            auto integer = Int();
+            if(!integer){
+                NULL_ERROR(to_string,INT)
+            }
+            auto src_str = std::to_string(*integer);
+            obj.append(src_str);
+            break;
+        }
+        case BType::BLIST:{
+            auto list = List();
+            if(!list){
+                NULL_ERROR(to_string,LIST)
+            }
+            obj.append("[");
+            curRowLen += 1;
+            for(int i=0;i<list->size();i++){
+                auto& item = list->at(i);
+                if(item->type_==BType::BDICT){
+                    obj.push_back('\n');
+                    PRINT_NEXT_LINE(curRowLen)
+                    item->get_json(curRowLen, obj);
+                }else{
+                    item->get_json(curRowLen, obj);
+                }
+                if(i!=list->size()-1){
+                    obj.append(", ");
+                    curRowLen += 2;
+                }
+            }
+            obj.append("]");
+            curRowLen+=1;
+            break;
+        }
+        case BType::BDICT:{
+            auto dict = Dict();
+            if(!dict){
+                NULL_ERROR(to_string,DICT)
+            }
+            obj.append("{\n");
+            PRINT_NEXT_LINE(curRowLen)
+            for(auto&&[k,v]:*dict){
+                auto format_keyStr = R"(")"+k+R"(":)";
+                obj.append(format_keyStr);
+                auto newLen = curRowLen+format_keyStr.size();
+                if(v->type_==BType::BDICT){
+                    obj.push_back('\n');
+                    PRINT_NEXT_LINE(newLen)
+                    v->get_json(newLen, obj);
+                }else{
+                    v->get_json(curRowLen, obj);
+                }
+                obj.append(",\n");
+                PRINT_NEXT_LINE(curRowLen)
+            }
+            obj.append("}");
+            break;
+        }
+    }
 
+}
 
-
-
-
-
+std::string bencode::BObject::to_string() {
+    string obj;
+    get_json(0, obj);
+    return obj;
+}
